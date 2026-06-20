@@ -32,7 +32,7 @@ Snapshots are keyed per source (each opponent + yourself). Re-scouting a source
 | 1 | Scaffold + champion/pool data | ✅ done |
 | 2 | Pool-tracking engine + tests | ✅ done |
 | 3 | Capture, region calibration, hotkeys (1024×768 windowed) | ✅ done |
-| 4 | Training pipeline (synthetic data from portraits) | ☐ |
+| 4 | Training pipeline (synthetic data from portraits) | ✅ done |
 | 5 | Inference wiring (capture → classify → engine) | ☐ |
 | 6 | Dashboard UI | ☐ |
 | 7 | Package to Windows `.exe` (PyInstaller) | ☐ |
@@ -81,6 +81,26 @@ pure/numpy and fully tested headless. Capture (`screen.py`, mss), hotkeys
 (`hotkeys.py`, pynput), and the calibration overlay (`calibrate.py`, PySide6)
 are thin wrappers that lazy-import their deps.
 
+## Training the recognizer
+
+No hand-labeling: training crops are **synthesized** from the champion portraits
+(`src/model/synth.py`) — portrait + star pips (1/2/3, bronze/silver/gold) on a
+cost-tinted, augmented background, plus an EMPTY class. A small multi-task CNN
+(`src/model/net.py`) predicts champion **and** star level.
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m src.model.train --epochs 8 --batch 128 --steps 200   # full run
+python -m src.model.train --smoke                              # tiny sanity run
+```
+
+Weights land in `models/classifier.pt` (+ `models/labels.json`); both are
+git-ignored and regenerated. A quick 4-epoch CPU run already reaches ~100%
+champ / ~96% star accuracy **on synthetic data** — real-screenshot accuracy
+depends on calibrating backgrounds/positions to your client, which is the next
+tuning step. Inference (`src/model/infer.py`) turns slot crops into engine
+`Unit`s via `ChampionRecognizer.recognize_slots`.
+
 ## Tests
 
 ```bash
@@ -100,5 +120,11 @@ src/capture/slicer.py         region image -> per-slot crops (numpy)
 src/capture/screen.py         mss screen capture (lazy import)
 src/capture/hotkeys.py        global hotkeys (lazy import)
 src/capture/calibrate.py      drag region selector (PySide6, lazy import)
-tests/                        engine + geometry + slicer tests
+src/model/labels.py           champion/star label space
+src/model/synth.py            synthetic training-image generator (numpy/PIL)
+src/model/net.py              multi-task CNN (champion + star)
+src/model/dataset.py          torch dataset over the synthetic generator
+src/model/train.py            training loop -> models/classifier.pt
+src/model/infer.py            crops -> recognized Units (bridges to engine)
+tests/                        engine + geometry + slicer + synth + model tests
 ```

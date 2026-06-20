@@ -11,9 +11,8 @@ PySide6>=6.6          # region calibration overlay, dashboard (lazy-imported)
 Pillow>=10.0          # image I/O
 
 # --- Vision / ML (Phase 4+) ---
-# opencv-python>=4.9
-# torch>=2.2          # classifier training + inference
-# torchvision>=0.17
+# CPU wheel: pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2            # classifier training + inference
 
 # --- Packaging (Phase 7) ---
 # pyinstaller>=6.0
