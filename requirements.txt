@@ -4,14 +4,14 @@
 pytest>=8.0
 
 # --- Capture & UI (Phase 3+) ---
-# mss>=9.0            # fast screen capture
-# PySide6>=6.6        # region selector, hotkeys, dashboard overlay
-# pynput>=1.7         # global hotkeys (alternative)
+numpy>=1.26           # image arrays + slicing
+mss>=9.0              # fast screen capture (lazy-imported)
+pynput>=1.7           # global hotkeys (lazy-imported)
+PySide6>=6.6          # region calibration overlay, dashboard (lazy-imported)
+Pillow>=10.0          # image I/O
 
 # --- Vision / ML (Phase 4+) ---
-# numpy>=1.26
 # opencv-python>=4.9
-# Pillow>=10.0
 # torch>=2.2          # classifier training + inference
 # torchvision>=0.17
 
