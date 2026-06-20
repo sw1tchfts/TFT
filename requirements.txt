@@ -1,0 +1,19 @@
+# --- Core engine + data (Phase 1-2) ---
+# The pool engine uses only the standard library.
+# fetch_data.py uses only the standard library (urllib).
+pytest>=8.0
+
+# --- Capture & UI (Phase 3+) ---
+# mss>=9.0            # fast screen capture
+# PySide6>=6.6        # region selector, hotkeys, dashboard overlay
+# pynput>=1.7         # global hotkeys (alternative)
+
+# --- Vision / ML (Phase 4+) ---
+# numpy>=1.26
+# opencv-python>=4.9
+# Pillow>=10.0
+# torch>=2.2          # classifier training + inference
+# torchvision>=0.17
+
+# --- Packaging (Phase 7) ---
+# pyinstaller>=6.0
