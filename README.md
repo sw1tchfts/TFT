@@ -35,13 +35,19 @@ Snapshots are keyed per source (each opponent + yourself). Re-scouting a source
 | 4 | Training pipeline (synthetic data from portraits) | ✅ done |
 | 5 | Inference wiring (capture → classify → engine) | ✅ done |
 | 6 | Dashboard UI | ✅ done |
-| 7 | Package to Windows `.exe` (PyInstaller) | ☐ |
+| 7 | One-click launcher (`run.bat`) | ✅ done |
 
-## Quick start
+## Run it (Windows, one click)
+
+Double-click **`run.bat`**. The first run sets up a virtual environment,
+installs dependencies, downloads champion data, and trains the recognizer (a few
+minutes). Every run after that just launches the app instantly — so you can keep
+editing the code and relaunch with one click. No build/packaging step.
+
+## Quick start (manual / other platforms)
 
 ```bash
-pip install -r requirements.txt
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt   # torch CPU build is the default on Windows
 
 python -m src.data.fetch_data --set 17     # 1. champion data + portraits
 python -m src.model.train --epochs 8       # 2. train the recognizer
