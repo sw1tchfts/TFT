@@ -33,15 +33,27 @@ Snapshots are keyed per source (each opponent + yourself). Re-scouting a source
 | 2 | Pool-tracking engine + tests | ✅ done |
 | 3 | Capture, region calibration, hotkeys (1024×768 windowed) | ✅ done |
 | 4 | Training pipeline (synthetic data from portraits) | ✅ done |
-| 5 | Inference wiring (capture → classify → engine) | ☐ |
-| 6 | Dashboard UI | ☐ |
+| 5 | Inference wiring (capture → classify → engine) | ✅ done |
+| 6 | Dashboard UI | ✅ done |
 | 7 | Package to Windows `.exe` (PyInstaller) | ☐ |
 
-## Setup
+## Quick start
 
 ```bash
 pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+python -m src.data.fetch_data --set 17     # 1. champion data + portraits
+python -m src.model.train --epochs 8       # 2. train the recognizer
+python -m src.capture.calibrate            # 3. set the capture region
+
+python main.py        # launch the always-on-top dashboard
+python main.py --cli  # or print the report to stdout (no GUI)
 ```
+
+In game (windowed): press `1`–`7` while scouting each opponent, `0` for your own
+board, `` ` `` to reset. The dashboard shows copies remaining, sorted by
+contestability — the fuller the bar, the more of that champion is left to roll.
 
 ## Data
 
@@ -126,5 +138,16 @@ src/model/net.py              multi-task CNN (champion + star)
 src/model/dataset.py          torch dataset over the synthetic generator
 src/model/train.py            training loop -> models/classifier.pt
 src/model/infer.py            crops -> recognized Units (bridges to engine)
-tests/                        engine + geometry + slicer + synth + model tests
+src/app/controller.py         orchestration: action -> capture -> recognize -> pool
+src/ui/render.py              text rendering of the contestability report
+src/ui/dashboard.py           always-on-top Qt dashboard (PySide6, lazy import)
+main.py                       entry point (GUI or --cli)
+tests/                        engine + geometry + slicer + synth + model
+                              + controller + render tests
 ```
+
+## Status note
+
+The recognizer is validated on **synthetic** data; on real screenshots its
+accuracy depends on calibrating the slot geometry and background tints to your
+client. Drop in one 1024×768 scout screenshot to lock those in.
