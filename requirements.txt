@@ -1,0 +1,18 @@
+# --- Core engine + data (Phase 1-2) ---
+# The pool engine uses only the standard library.
+# fetch_data.py uses only the standard library (urllib).
+pytest>=8.0
+
+# --- Capture & UI (Phase 3+) ---
+numpy>=1.26           # image arrays + slicing
+mss>=9.0              # fast screen capture (lazy-imported)
+pynput>=1.7           # global hotkeys (lazy-imported)
+PySide6>=6.6          # region calibration overlay, dashboard (lazy-imported)
+Pillow>=10.0          # image I/O
+
+# --- Vision / ML (Phase 4+) ---
+# CPU wheel: pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2            # classifier training + inference
+
+# --- Packaging (Phase 7) ---
+# pyinstaller>=6.0
