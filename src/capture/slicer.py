@@ -36,3 +36,16 @@ def slice_image(image, layout: Layout, groups: list[str] | None = None) -> dict:
             continue
         crops[slot.id] = image[y0:y1, x0:x1]
     return crops
+
+
+def save_crops(crops: dict, out_dir: str) -> int:
+    """Write each slot crop to out_dir as a PNG (for calibration checks)."""
+    import os
+
+    from PIL import Image
+
+    os.makedirs(out_dir, exist_ok=True)
+    for slot_id, crop in crops.items():
+        fname = slot_id.replace(":", "_").replace(",", "-") + ".png"
+        Image.fromarray(crop).save(os.path.join(out_dir, fname))
+    return len(crops)

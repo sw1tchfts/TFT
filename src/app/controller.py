@@ -57,17 +57,42 @@ class ScoutController:
             self.last_event = event
             return event
 
-        image = self.capture.grab_layout_region(self.layout)
+        region_image = self.capture.grab_layout_region(self.layout)
+        return self._ingest(region_image, action)
 
+    def process_image(self, full_image, action: str) -> CaptureEvent:
+        """Process a saved screenshot (e.g. loaded from a PNG file).
+
+        `full_image` is a full-frame capture; the layout region is cropped out of
+        it using screen coordinates, then handled like a live capture. Useful for
+        offline testing and calibration without the game running.
+        """
+        if action == RESET:
+            return self.handle_action(RESET)
+        region_image = self._crop_region(full_image)
+        return self._ingest(region_image, action)
+
+    def _crop_region(self, full_image):
+        """Crop the layout region (screen coords) out of a full-frame image."""
+        x0, y0, x1, y1 = self.layout.region
+        h, w = full_image.shape[0], full_image.shape[1]
+        if x1 > w or y1 > h:
+            raise ValueError(
+                f"layout region {self.layout.region} exceeds image size {(w, h)}; "
+                "use an image at least as large as the region, or recalibrate"
+            )
+        return full_image[y0:y1, x0:x1]
+
+    def _ingest(self, region_image, action: str) -> CaptureEvent:
         # available groups depend on which exist in this layout
         groups = [g for g in COUNTED_GROUPS if g in self.layout.groups]
-        crops = slice_image(image, self.layout, groups)
+        crops = slice_image(region_image, self.layout, groups)
         units = self.recognizer.recognize_slots(crops, self.min_confidence)
         self.tracker.update_source(action, units)
 
         shop: list[Unit] = []
         if action == SELF_SOURCE and SHOP_GROUP in self.layout.groups:
-            shop_crops = slice_image(image, self.layout, [SHOP_GROUP])
+            shop_crops = slice_image(region_image, self.layout, [SHOP_GROUP])
             shop = self.recognizer.recognize_slots(shop_crops, self.min_confidence)
             self.last_shop = shop
 

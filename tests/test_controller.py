@@ -103,6 +103,26 @@ def test_self_capture_records_shop_separately():
     assert ctrl.last_shop == event.shop
 
 
+def test_process_image_crops_region_and_updates():
+    ctrl, _, tracker = make_controller([[Unit("C1", 1)]])
+    w, h = ctrl.layout.region_size
+    full = np.zeros((h, w, 3), dtype=np.uint8)  # region == full window here
+    event = ctrl.process_image(full, "opp2")
+    assert event.source == "opp2"
+    assert tracker.held()["C1"] == 1
+
+
+def test_process_image_rejects_too_small_image():
+    ctrl, _, _ = make_controller([[Unit("C1", 1)]])
+    ctrl.layout.region = (0, 0, 500, 500)  # bigger than the tiny image below
+    tiny = np.zeros((100, 100, 3), dtype=np.uint8)
+    try:
+        ctrl.process_image(tiny, "opp1")
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+
+
 def test_report_reflects_remaining():
     ctrl, _, _ = make_controller([[Unit("C5", 3)]])  # 9 copies = whole 5-cost pool
     ctrl.handle_action("opp1")
