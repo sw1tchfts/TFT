@@ -86,6 +86,13 @@ estimates — calibrate against your client:
 python -m src.capture.calibrate --out config/layout_1024x768.json
 ```
 
+You can also recalibrate **from inside the app** at any time (handy when the game
+window moves): the dashboard has a **Calibrate region** button (drag a new
+rectangle — it's saved and applied live) and a **Show grid** button that overlays
+the computed slot boxes on screen so you can confirm they land on the hexes.
+Because the grid is stored as fractions of the region, re-dragging the region is
+usually all that's needed.
+
 Hotkeys (while TFT is focused) tag each capture to a source:
 
 | Key | Action |

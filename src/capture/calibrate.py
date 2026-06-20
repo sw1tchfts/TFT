@@ -26,6 +26,8 @@ def _build_selector():
     from PySide6 import QtCore, QtGui, QtWidgets
 
     class RegionSelector(QtWidgets.QWidget):
+        finished = QtCore.Signal()  # emitted on selection or cancel
+
         def __init__(self):
             super().__init__()
             self.setWindowFlags(
@@ -75,12 +77,83 @@ def _build_selector():
                 g.y() + rect.bottom(),
             )
             self.close()
+            self.finished.emit()
+
+        def keyPressEvent(self, event):
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.close()
+                self.finished.emit()
+
+    return RegionSelector
+
+
+def _build_grid_overlay():
+    """Overlay that outlines the current slot grid over the screen (deferred)."""
+    from PySide6 import QtCore, QtGui, QtWidgets
+
+    class GridOverlay(QtWidgets.QWidget):
+        GROUP_COLORS = {
+            "board": QtGui.QColor(80, 200, 255),
+            "bench": QtGui.QColor(120, 255, 120),
+            "shop": QtGui.QColor(255, 200, 80),
+        }
+
+        def __init__(self, layout: Layout):
+            super().__init__()
+            self.layout = layout
+            self.setWindowFlags(
+                QtCore.Qt.FramelessWindowHint
+                | QtCore.Qt.WindowStaysOnTopHint
+                | QtCore.Qt.Tool
+            )
+            self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+            self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+            screen = QtWidgets.QApplication.primaryScreen().geometry()
+            self.setGeometry(screen)
+
+        def paintEvent(self, _event):
+            painter = QtGui.QPainter(self)
+            # region outline
+            rx0, ry0, rx1, ry1 = self.layout.region
+            painter.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255), 2))
+            painter.drawRect(rx0, ry0, rx1 - rx0, ry1 - ry0)
+            # slots (converted to screen coords)
+            for slot in self.layout.slots():
+                color = self.GROUP_COLORS.get(slot.group, QtGui.QColor(255, 0, 0))
+                painter.setPen(QtGui.QPen(color, 1))
+                sx0, sy0, sx1, sy1 = self.layout.to_screen(slot.rect)
+                painter.drawRect(sx0, sy0, sx1 - sx0, sy1 - sy0)
+            painter.setPen(QtGui.QColor(255, 255, 255))
+            painter.drawText(rx0 + 4, ry0 - 6 if ry0 > 12 else ry0 + 14,
+                             "Grid preview — click or Esc to close")
+
+        def mousePressEvent(self, _event):
+            self.close()
 
         def keyPressEvent(self, event):
             if event.key() == QtCore.Qt.Key_Escape:
                 self.close()
 
-    return RegionSelector
+    return GridOverlay
+
+
+def show_grid(layout: Layout, seconds: float = 4.0) -> None:
+    """Show the slot grid overlaid on the screen for the given layout.
+
+    Standalone helper: runs its own event loop and auto-closes after `seconds`.
+    The dashboard uses _build_grid_overlay directly instead of this.
+    """
+    from PySide6 import QtCore, QtWidgets
+
+    owns_app = QtWidgets.QApplication.instance() is None
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    GridOverlay = _build_grid_overlay()
+    overlay = GridOverlay(layout)
+    overlay.show()
+    QtCore.QTimer.singleShot(int(seconds * 1000), overlay.close)
+    if owns_app:
+        QtCore.QTimer.singleShot(int(seconds * 1000) + 200, app.quit)
+        app.exec()
 
 
 def calibrate_region(base: Layout | None = None) -> Layout | None:

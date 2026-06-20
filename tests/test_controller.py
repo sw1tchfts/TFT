@@ -123,6 +123,37 @@ def test_process_image_rejects_too_small_image():
         pass
 
 
+def test_recalibrate_updates_region_live():
+    ctrl, _, _ = make_controller([])
+    new = ctrl.recalibrate((10, 20, 110, 220))
+    assert new == (10, 20, 110, 220)
+    assert ctrl.layout.region == (10, 20, 110, 220)
+
+
+def test_recalibrate_persists_to_layout_path(tmp_path):
+    from src.capture.layout import Layout, default_1024x768
+
+    path = tmp_path / "layout.json"
+    default_1024x768().save(str(path))
+    layout = Layout.load(str(path))
+    tracker = PoolTracker(SET_DATA)
+    ctrl = ScoutController(FakeCapture(layout), ScriptedRecognizer([]), tracker,
+                           layout, layout_path=str(path))
+    ctrl.recalibrate((5, 6, 1029, 774))
+    # reload from disk: the new region survived
+    reloaded = Layout.load(str(path))
+    assert reloaded.region == (5, 6, 1029, 774)
+    # grid fractions unchanged -> slots still computed relative to new region
+    assert reloaded.slot_rects() == layout.slot_rects()
+
+
+def test_recalibrate_coerces_to_ints():
+    ctrl, _, _ = make_controller([])
+    new = ctrl.recalibrate((1.9, 2.1, 100.5, 200.0))
+    assert new == (1, 2, 100, 200)
+    assert all(isinstance(v, int) for v in ctrl.layout.region)
+
+
 def test_report_reflects_remaining():
     ctrl, _, _ = make_controller([[Unit("C5", 3)]])  # 9 copies = whole 5-cost pool
     ctrl.handle_action("opp1")

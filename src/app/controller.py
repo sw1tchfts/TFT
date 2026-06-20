@@ -40,14 +40,29 @@ class CaptureEvent:
 
 class ScoutController:
     def __init__(self, capture, recognizer, tracker, layout: Layout,
-                 min_confidence: float = 0.5):
+                 min_confidence: float = 0.5, layout_path: str | None = None):
         self.capture = capture
         self.recognizer = recognizer
         self.tracker = tracker
         self.layout = layout
         self.min_confidence = min_confidence
+        self.layout_path = layout_path
         self.last_event: CaptureEvent | None = None
         self.last_shop: list[Unit] = []
+
+    def recalibrate(self, region) -> tuple:
+        """Update the capture region and persist it.
+
+        Grid slots are stored as fractions of the region, so changing the region
+        is all that's needed when the game window moves or resizes. Saved to
+        layout_path (if set) so it survives restarts; applied immediately.
+        """
+        region = tuple(int(v) for v in region)
+        self.layout.region = region
+        if self.layout_path:
+            self.layout.save(self.layout_path)
+        return region
+
 
     def handle_action(self, action: str) -> CaptureEvent:
         if action == RESET:
@@ -126,4 +141,5 @@ def build_controller(layout_path: str | None = None,
     tracker = PoolTracker(set_data)
     recognizer = ChampionRecognizer()
     capture = ScreenCapture()
-    return ScoutController(capture, recognizer, tracker, layout, min_confidence)
+    return ScoutController(capture, recognizer, tracker, layout, min_confidence,
+                           layout_path=layout_path)

@@ -35,6 +35,16 @@ def run_dashboard(controller: ScoutController) -> int:
             self.status = QtWidgets.QLabel("Press 1-7 to scout, 0 for self, ` to reset")
             layout.addWidget(self.status)
 
+            # calibration controls
+            cal_row = QtWidgets.QHBoxLayout()
+            self.cal_btn = QtWidgets.QPushButton("Calibrate region")
+            self.cal_btn.clicked.connect(self.calibrate)
+            self.grid_btn = QtWidgets.QPushButton("Show grid")
+            self.grid_btn.clicked.connect(self.show_grid)
+            cal_row.addWidget(self.cal_btn)
+            cal_row.addWidget(self.grid_btn)
+            layout.addLayout(cal_row)
+
             self.cost_filter = QtWidgets.QComboBox()
             self.cost_filter.addItem("All costs", None)
             for c in (1, 2, 3, 4, 5):
@@ -49,6 +59,35 @@ def run_dashboard(controller: ScoutController) -> int:
             layout.addWidget(self.table)
 
             self.refresh()
+
+        def calibrate(self):
+            """Drag a new capture region; persist + apply it live."""
+            from ..capture.calibrate import _build_selector
+
+            RegionSelector = _build_selector()
+            self._selector = RegionSelector()  # keep a ref so it isn't GC'd
+            self._selector.finished.connect(self._on_calibrated)
+            self.hide()  # get the dashboard out of the way of the overlay
+            self._selector.show()
+
+        def _on_calibrated(self):
+            self.show()
+            region = self._selector.selected
+            if region is not None:
+                region = controller.recalibrate(region)
+                w, h = region[2] - region[0], region[3] - region[1]
+                self.status.setText(f"Region set: {w}x{h} (saved)")
+            else:
+                self.status.setText("Calibration cancelled")
+
+        def show_grid(self):
+            """Overlay the current slot grid on screen for a few seconds."""
+            from ..capture.calibrate import _build_grid_overlay
+
+            GridOverlay = _build_grid_overlay()
+            self._grid = GridOverlay(controller.layout)
+            self._grid.show()
+            QtCore.QTimer.singleShot(4000, self._grid.close)
 
         def on_capture(self, action: str):
             ev = controller.last_event
